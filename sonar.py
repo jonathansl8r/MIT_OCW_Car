@@ -43,10 +43,6 @@ class ranger:
       self.pi.set_mode(self._trig, pigpio.OUTPUT)
       self.pi.set_mode(self._echo, pigpio.INPUT)
 
-      #Do not create callback until read is called....
-      #self._cb = pi.callback(self._trig, pigpio.EITHER_EDGE, self._cbf)
-      #self._cb = pi.callback(self._echo, pigpio.EITHER_EDGE, self._cbf)
-
       self._inited = True
 
    def _cbf(self, gpio, level, tick):

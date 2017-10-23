@@ -4,7 +4,7 @@ import pigpio
 import threading
 import Queue
 from motor import motor
-from sonar_thr import ranger
+from sonar import ranger
 
 class Car(sm.SM, threading.Thread):
 
