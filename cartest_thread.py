@@ -4,10 +4,7 @@ import pigpio
 import threading
 import Queue
 from motor import motor
-from sonar_thread import ranger
-
-#https://stackoverflow.com/questions/15729498/how-to-start-and-stop-thread
-#https://stackoverflow.com/questions/18018033/how-to-stop-a-looping-thread-in-python
+from sonar_thr import ranger
 
 class Car(sm.SM, threading.Thread):
 
@@ -24,28 +21,23 @@ class Car(sm.SM, threading.Thread):
         counter = 0
         to = time.time()
         started = False
-        threading.Thread.__init__(self)
-        thread_car = threading.Thread(target=self.sonar.read)
-        thread_car.setDaemon(False)
-        print "Number of active threads: " + str(threading.activeCount())
-        while len(x) < 50:
+        end = 50
+        while len(x) < end:
+
             #Check if there is a thread and if there is any data in the queue.
-            if not thread_car.isAlive() and queue.empty():
-                if not started:
-                    started = True
-                    thread_car = threading.Thread(target=self.sonar.run)
-                    thread_car.setDaemon(False)
-                    thread_car.start()
-                    threads += [thread_car]
-                    print "Thread created."
-                else:
-                    pass
-                    thread_car = threading.Thread(target=self.sonar.run)
-                    thread_car.setDaemon(False)
-                    thread_car.start()
-                    threads += [thread_car]
+            if not started:
+                started = True
+                thread_car = threading.Thread(target=self.sonar.read)
+                thread_car.setDaemon(False)
+                thread_car.start()
+                threads += [thread_car]
+                print "Thread created."
             else:
-                pass
+                if not thread_car.isAlive() and queue.empty():
+                    thread_car = threading.Thread(target=self.sonar.read)
+                    thread_car.setDaemon(False)
+                    thread_car.start()
+                    threads += [thread_car]
 
             #Check if the queue is empty. Get data if it is not. Will not create another thread if queue is not empty
             if not queue.empty():
@@ -53,10 +45,11 @@ class Car(sm.SM, threading.Thread):
                 x.append(queue.get(True, 1))
                 queue.task_done()
                 print "Queue emptied."
+                #print "Sending kill pill to thread"
+                #kill_pill.set()
             else:
                 counter = counter + 1
 
-        kill_pill.notify() #Notify thread that it needs to go to "dead state"
         print "Total Time run: " + str(time.time() - to)
         print "Final Number of Active Threads: " + str(threading.activeCount())
         print "Running Threads: " + str(threading.enumerate())
@@ -75,13 +68,10 @@ class Car(sm.SM, threading.Thread):
 
         for residual in threading.enumerate():
             if out == 0:
-                print "Main Thread: " + str(residual) + "identified"
+                print "Main Thread: " + str(residual) + " identified"
             else:
                 to = time.time()
-                if residual.isAlive():
-                    print str(residual) + " is alive...!!!!!"
-                    print str(residual) + " is Daemon? " + str(residual.isDaemon())
-                elif not residual.isAlive():
+                if not residual.isAlive():
                     print "Joining: " + str(residual)
                     residual.join()
                     print str(residual) + " Joined"
@@ -89,19 +79,34 @@ class Car(sm.SM, threading.Thread):
         return (counter, x)
 
 def par_test():
+
     print "Number of active threads before starting: " + str(threading.activeCount())
     print "Active threads before starting: " + str(threading.enumerate())
+
     pi = pigpio.pi()
     queue = Queue.Queue()
-    resume_condition = threading.Condition()
-    kill_pill = threading.Condition()
-    sonar = ranger(pi=pi, trigger=17, echo=27, queue=queue, condition=resume_condition, kill_pill=kill_pill)
+    kill_pill = threading.Event()
+
+    sonar = ranger(pi=pi, trigger=17, echo=27, queue=queue, kill_pill=kill_pill)
     motor_left = motor(pi=pi, forward_pin=19, back_pin=26)
     car = Car(pi=pi, motor_left=motor_left, motor_right=motor_left, sonar=sonar)
+
     result = car.parallel_test(queue, kill_pill)
+
     print "Counts: " + str(result[0])
     print "Reading: " + str(result[1])
+
+    while not queue.empty:
+        queue.get()
+        queue.task_done()
+        print "Item removed from queue!"
+    print "Queue joining..."
+    queue.join()
+    print "Queue joined."
+
     sonar.cancel()
+    pi.stop()
+    print "Active threads after cleanup: " + str(threading.enumerate())
 
 if __name__ == '__main__':
-    par_test()
+    pass

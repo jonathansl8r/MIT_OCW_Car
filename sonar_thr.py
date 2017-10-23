@@ -29,6 +29,7 @@ class ranger:
 
       self.queue = queue
       self.kill_pill = kill_pill
+      self.waiting = False
 
       self._ping = False
       self._high = None
@@ -39,12 +40,12 @@ class ranger:
       self._trig_mode = pi.get_mode(self._trig)
       self._echo_mode = pi.get_mode(self._echo)
 
-      pi.set_mode(self._trig, pigpio.OUTPUT)
-      pi.set_mode(self._echo, pigpio.INPUT)
+      self.pi.set_mode(self._trig, pigpio.OUTPUT)
+      self.pi.set_mode(self._echo, pigpio.INPUT)
 
-      if not self.kill_pill.isSet():
-        self._cb = pi.callback(self._trig, pigpio.EITHER_EDGE, self._cbf)
-        self._cb = pi.callback(self._echo, pigpio.EITHER_EDGE, self._cbf)
+      #Do not create callback until read is called....
+      #self._cb = pi.callback(self._trig, pigpio.EITHER_EDGE, self._cbf)
+      #self._cb = pi.callback(self._echo, pigpio.EITHER_EDGE, self._cbf)
 
       self._inited = True
 
@@ -70,18 +71,28 @@ class ranger:
 
       round trip cms = round trip time / 1000000.0 * 34030
       """
-      if self.kill_pill.isSet():
-          print "Killed by the pill"
-          print "Cancelling callbacks..."
-          self.cancel()
-          print "Cancelled successfully!!!!!!!!!!!!!!!!!!!!!!!!!"
-          return None
+      print "Creating callbacks..."
+      self._cb = self.pi.callback(self._trig, pigpio.EITHER_EDGE, self._cbf)
+      self._cb = self.pi.callback(self._echo, pigpio.EITHER_EDGE, self._cbf)
 
       if self._inited:
          self._ping = False
          self.pi.gpio_trigger(self._trig)
          if not self.queue == None:
              self.queue.put(self._time)
+             print "Data added to queue."
+             self.waiting = True
+             '''while self.waiting:
+                 if self.kill_pill.isSet():
+                     self.waiting = False
+                     print "Killed by the pill"
+                     print "Cancelling callbacks..."
+                     self._cb.cancel()
+                     print "Cancelled successfully!!!!!!!!!!!!!!!!!!!!!!!!!"
+                     print "Immune to the pill: " + str(threading.enumerate())
+                     return None
+                 else:
+                     pass'''
          else:
             return self._time
       else:
