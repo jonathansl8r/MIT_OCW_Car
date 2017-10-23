@@ -1,7 +1,5 @@
 import pigpio
 
-pi = pigpio.pi()
-
 class motor():
 
     def __init__(self, pi, forward_pin, back_pin):
