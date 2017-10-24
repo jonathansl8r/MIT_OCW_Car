@@ -18,7 +18,7 @@ class ranger:
    the high and low edges indicates the sonar round trip time.
    """
 
-   def __init__(self, pi, trigger, echo, queue, kill_pill):
+   def __init__(self, pi, trigger, echo, queue):
       """
       The class is instantiated with the Pi to use and the
       gpios connected to the trigger and echo pins.
@@ -28,7 +28,6 @@ class ranger:
       self._echo = echo
 
       self.queue = queue
-      self.kill_pill = kill_pill
       self.waiting = False
 
       self._ping = False
@@ -75,19 +74,7 @@ class ranger:
          self.pi.gpio_trigger(self._trig)
          if not self.queue == None:
              self.queue.put(self._time)
-             print "Data added to queue."
              self.waiting = True
-             '''while self.waiting:
-                 if self.kill_pill.isSet():
-                     self.waiting = False
-                     print "Killed by the pill"
-                     print "Cancelling callbacks..."
-                     self._cb.cancel()
-                     print "Cancelled successfully!!!!!!!!!!!!!!!!!!!!!!!!!"
-                     print "Immune to the pill: " + str(threading.enumerate())
-                     return None
-                 else:
-                     pass'''
          else:
             return self._time
       else:
