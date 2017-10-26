@@ -74,24 +74,29 @@ class Car(sm.SM, threading.Thread):
         print "Total Time run: " + str(time.time() - to)
         out = 0
 
-        for i in th_sonars: #Join all of the dead threads left over.
+        self.sonar_thread_cleanup(th_sonars)
+        self.encoder_thread_cleanup(th_encoders, t_enc)
+
+        return (counter, x, y)
+
+    def sonar_thread_cleanup(self, threads):
+        for i in threads:
             if not i.isAlive():
                 i.join()
             else:
-                print "Thread " + str(i) + "IS ALIVE!!!!!!!!!!"
+                print "Thread " + str(i) + " is alive."
 
-        for j in th_encoders:
-            if not j.isAlive():
-                j.join()
+    def encoder_thread_cleanup(self, threads, timer):
+        for i in threads:
+            if not i.isAlive():
+                i.join()
             else:
-                print "Thread " + str(i) + " is alive. Waiting for " + str(t_enc) + " seconds"
-                time.sleep(5)
-                if not j.isAlive():
-                    j.join()
+                print str(i) + " never joined. Waiting " + str(timer) + " seconds to try again."
+                time.sleep(timer)
+                if i.isAlive():
+                    i.join()
                 else:
-                    print str(i) + " Never joined..."
-
-        return (counter, x, y)
+                    print str(i) + " WILL NOT JOIN!"
 
     def cleanup(self):
 
