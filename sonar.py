@@ -27,7 +27,11 @@ class ranger:
       self._trig = trigger
       self._echo = echo
 
-      self.queue = queue
+      if not queue == None:
+         self.queue = queue
+      else:
+         self.queue = None
+
       self.waiting = False
 
       self._ping = False
