@@ -20,7 +20,7 @@ class Car(sm.SM, threading.Thread):
         self.encoder_queue = encoder_queue
         threading.Thread.__init__(self)
 
-    def parallel_test(self): #Five second test to verify usdist_sensor callback is working
+    def parallel_test(self): #Test to verify usdist_sensor callback is working
         x = []
         y = []
         th_sonars = []
@@ -28,10 +28,11 @@ class Car(sm.SM, threading.Thread):
         counter = 0
         to = time.time()
         started = False
-        end = 500
+        end = 100
         t_enc = 1
 
-        self.motor_left.speed(0)
+        self.motor_left.speed(200)
+        self.motor_right.speed(200)
 
         while len(x) < end:
 
@@ -141,8 +142,9 @@ def par_test():
 
     sonar = ranger(pi=pi, trigger=17, echo=27, queue=sonar_queue)
     enc = encoder(pi=pi, signal_pin=2, queue=encoder_queue)
-    motor_left = motor(pi=pi, forward_pin=19, back_pin=26)
-    car = Car(pi=pi, motor_left=motor_left, motor_right=motor_left, encoder_left=enc, encoder_right=enc, sonar=sonar, encoder_queue=encoder_queue, sonar_queue=sonar_queue)
+    motor_left = motor(pi=pi, forward_pin=26, back_pin=19)
+    motor_right = motor(pi=pi, forward_pin=16, back_pin=20)
+    car = Car(pi=pi, motor_left=motor_left, motor_right=motor_right, encoder_left=enc, encoder_right=enc, sonar=sonar, encoder_queue=encoder_queue, sonar_queue=sonar_queue)
 
     result = car.parallel_test()
 
