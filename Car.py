@@ -32,7 +32,7 @@ class Car(sm.SM, threading.Thread):
         t_enc = 1
 
         self.motor_left.speed(200)
-        self.motor_right.speed(220) #offset of 20 required to get straight line...
+        self.motor_right.speed(220)  #offset of 20 required to get straight line...
 
         while len(x) < end:
 
