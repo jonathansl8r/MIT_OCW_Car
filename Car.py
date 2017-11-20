@@ -6,7 +6,6 @@ import Queue
 from motor import motor
 from sonar import ranger
 from encoder import encoder
-
 class Car(sm.SM, threading.Thread):
 
     def __init__(self, pi, motor_left, motor_right, encoder_left, encoder_right, sonar, encoder_queue, sonar_queue):
@@ -18,7 +17,25 @@ class Car(sm.SM, threading.Thread):
         self.pi = pi
         self.sonar_queue = sonar_queue
         self.encoder_queue = encoder_queue
+        self.sonar_threads = []
+        self.encoder_threads = []
         threading.Thread.__init__(self)
+
+    def sonar_read(self): #Method for creating sonar thread and taking a distance reading
+        x = []
+        started = False
+        reading = True
+        while reading:
+            if not started:
+                started = True
+                th_sonar = threading.Thread(target=self.sonar.read)
+                th_sonar.setDaemon(False)
+                th_sonar.start()
+                th_sonar += [th_sonar] #Make a list of all sonar threads created
+
+            elif reading and not self.sonar_queue.empty():
+                x.append(self.sonar_queue.get(True, 1))
+                self.sonar_queue.task_done()
 
     def parallel_test(self): #Test to verify usdist_sensor callback is working
         x = []
